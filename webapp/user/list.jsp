@@ -85,8 +85,14 @@
                         <td>${user.userId}</td>
                         <td>${user.name}</td>
                         <td>${user.email}</td>
-                        <td><a href="/user/updateForm?userId=${user.userId}" class="btn btn-success" role="button">수정</a>
-                        </td>
+                        <c:choose>
+                            <c:when test="${user.userId == loginUser.userId}">
+                                <td><a href="/user/updateForm?userId=${user.userId}" class="btn btn-success" role="button">수정</a></td>
+                            </c:when>
+                            <c:otherwise>
+                                <td><a href="/user/updateForm?userId=${user.userId}" class="btn btn-success disabled" role="button">수정</a></td>
+                            </c:otherwise>
+                        </c:choose>
                     </tr>
                 </c:forEach>
                 </tbody>
