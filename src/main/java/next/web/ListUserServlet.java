@@ -30,6 +30,6 @@ public class ListUserServlet extends HttpServlet {
             return;
         }
 
-        resp.sendRedirect("/index.jsp");
+        resp.sendRedirect("/");
     }
 }

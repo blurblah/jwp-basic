@@ -26,13 +26,13 @@ public class LoginUserServlet extends HttpServlet {
         User user = DataBase.findUserById(userId);
         if(user == null || !req.getParameter("password").equals(user.getPassword())) {
             log.info("User {}'s password is invalid.", userId);
-            resp.sendRedirect("/user/login_failed.html");
+            resp.sendRedirect("/user/login_failed.jsp");
             return;
         }
 
         HttpSession session = req.getSession();
         session.setAttribute("user", user);
         log.info("User {} logged in.", userId);
-        resp.sendRedirect("/index.jsp");
+        resp.sendRedirect("/");
     }
 }

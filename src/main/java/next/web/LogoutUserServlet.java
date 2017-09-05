@@ -28,6 +28,6 @@ public class LogoutUserServlet extends HttpServlet {
             log.info("User {} logged out.", ((User)value).getUserId());
         }
 
-        resp.sendRedirect("/index.jsp");
+        resp.sendRedirect("/");
     }
 }
