@@ -12,10 +12,12 @@ import java.util.List;
 /**
  * Created by sunchanlee on 2017. 9. 6..
  */
-public abstract class JdbcTemplate {
+public class JdbcTemplate {
 
-    public List query(String sql) throws SQLException {
-        List list = new ArrayList<>();
+    @SuppressWarnings("rawtypes")
+    public List query(String sql, PreparedStatementSetter pstmtSetter,
+                      RowMapper rowMapper) throws SQLException {
+        List<Object> list = new ArrayList<Object>();
 
         Connection con = null;
         PreparedStatement pstmt = null;
@@ -23,11 +25,13 @@ public abstract class JdbcTemplate {
         try {
             con = ConnectionManager.getConnection();
             pstmt = con.prepareStatement(sql);
-            setValues(pstmt);
+            if(pstmtSetter != null) {
+                pstmtSetter.setValues(pstmt);
+            }
             rs = pstmt.executeQuery();
 
             while(rs.next()) {
-                list.add(mapRow(rs));
+                list.add(rowMapper.mapRow(rs));
             }
         } finally {
             if(rs != null) rs.close();
@@ -38,8 +42,10 @@ public abstract class JdbcTemplate {
         return list;
     }
 
-    public Object queryForObject(String sql) throws SQLException {
-        List list = query(sql);
+    @SuppressWarnings("rawtypes")
+    public Object queryForObject(String sql, PreparedStatementSetter pstmtSetter,
+                                 RowMapper rowMapper) throws SQLException {
+        List list = query(sql, pstmtSetter, rowMapper);
         if(list.isEmpty()) {
             return null;
         }
@@ -47,13 +53,13 @@ public abstract class JdbcTemplate {
         return list.get(0);
     }
 
-    public void update(String sql) throws SQLException {
+    public void update(String sql, PreparedStatementSetter pstmtSetter) throws SQLException {
         Connection con = null;
         PreparedStatement pstmt = null;
         try {
             con = ConnectionManager.getConnection();
             pstmt = con.prepareStatement(sql);
-            setValues(pstmt);
+            pstmtSetter.setValues(pstmt);
 
             pstmt.executeUpdate();
         } finally {
@@ -66,7 +72,4 @@ public abstract class JdbcTemplate {
             }
         }
     }
-
-    abstract Object mapRow(ResultSet rs) throws SQLException;
-    abstract void setValues(PreparedStatement pstmt) throws SQLException;
 }
