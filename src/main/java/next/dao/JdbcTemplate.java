@@ -1,6 +1,7 @@
 package next.dao;
 
 import core.jdbc.ConnectionManager;
+import next.model.DataAccessException;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -15,16 +16,12 @@ import java.util.List;
 public class JdbcTemplate {
 
     @SuppressWarnings("rawtypes")
-    public List query(String sql, PreparedStatementSetter pstmtSetter,
-                      RowMapper rowMapper) throws SQLException {
-        List<Object> list = new ArrayList<Object>();
-
-        Connection con = null;
-        PreparedStatement pstmt = null;
+    public <T> List<T> query(String sql, PreparedStatementSetter pstmtSetter,
+                      RowMapper<T> rowMapper) throws DataAccessException {
+        List<T> list = new ArrayList<T>();
         ResultSet rs = null;
-        try {
-            con = ConnectionManager.getConnection();
-            pstmt = con.prepareStatement(sql);
+        try(Connection con = ConnectionManager.getConnection();
+            PreparedStatement pstmt = con.prepareStatement(sql)) {
             if(pstmtSetter != null) {
                 pstmtSetter.setValues(pstmt);
             }
@@ -33,19 +30,36 @@ public class JdbcTemplate {
             while(rs.next()) {
                 list.add(rowMapper.mapRow(rs));
             }
+        } catch(SQLException e) {
+            throw new DataAccessException(e.getMessage(), e.getCause());
         } finally {
-            if(rs != null) rs.close();
-            if(pstmt != null) pstmt.close();
-            if(con != null) con.close();
+            try {
+                if(rs != null) rs.close();
+            } catch (SQLException e) {
+                throw new DataAccessException(e.getMessage(), e.getCause());
+            }
         }
 
         return list;
     }
 
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper,
+                             Object... values) throws DataAccessException {
+        PreparedStatementSetter pss = new PreparedStatementSetter() {
+            @Override
+            public void setValues(PreparedStatement pstmt) throws SQLException {
+                for(int i = 0; i < values.length; i++) {
+                    pstmt.setObject(i, values[i]);
+                }
+            }
+        };
+        return query(sql, pss, rowMapper);
+    }
+
     @SuppressWarnings("rawtypes")
-    public Object queryForObject(String sql, PreparedStatementSetter pstmtSetter,
-                                 RowMapper rowMapper) throws SQLException {
-        List list = query(sql, pstmtSetter, rowMapper);
+    public <T> T queryForObject(String sql, PreparedStatementSetter pstmtSetter,
+                                 RowMapper<T> rowMapper) throws DataAccessException {
+        List<T> list = query(sql, pstmtSetter, rowMapper);
         if(list.isEmpty()) {
             return null;
         }
@@ -53,23 +67,24 @@ public class JdbcTemplate {
         return list.get(0);
     }
 
-    public void update(String sql, PreparedStatementSetter pstmtSetter) throws SQLException {
-        Connection con = null;
-        PreparedStatement pstmt = null;
-        try {
-            con = ConnectionManager.getConnection();
-            pstmt = con.prepareStatement(sql);
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper,
+                                Object... values) throws DataAccessException {
+        List<T> list = query(sql, rowMapper, values);
+        if(list.isEmpty()) {
+            return null;
+        }
+
+        return list.get(0);
+    }
+
+    public void update(String sql, PreparedStatementSetter pstmtSetter) {
+        try(Connection con = ConnectionManager.getConnection();
+            PreparedStatement pstmt = con.prepareStatement(sql)) {
             pstmtSetter.setValues(pstmt);
 
             pstmt.executeUpdate();
-        } finally {
-            if (pstmt != null) {
-                pstmt.close();
-            }
-
-            if (con != null) {
-                con.close();
-            }
+        } catch(SQLException e) {
+            throw new DataAccessException(e.getMessage(), e.getCause());
         }
     }
 }

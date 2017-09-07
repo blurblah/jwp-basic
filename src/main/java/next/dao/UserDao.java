@@ -43,9 +43,9 @@ public class UserDao {
     public List<User> findAll() throws SQLException {
         String sql = "SELECT userId, password, name, email FROM users";
         JdbcTemplate template = new JdbcTemplate();
-        return (List<User>)template.query(sql, null, new RowMapper() {
+        return template.query(sql, null, new RowMapper<User>() {
             @Override
-            public Object mapRow(ResultSet rs) throws SQLException {
+            public User mapRow(ResultSet rs) throws SQLException {
                 return new User(rs.getString("userId"),
                         rs.getString("password"), rs.getString("name"),
                         rs.getString("email"));
@@ -56,14 +56,14 @@ public class UserDao {
     public User findByUserId(String userId) throws SQLException {
         String sql = "SELECT userId, password, name, email FROM USERS WHERE userid=?";
         JdbcTemplate template = new JdbcTemplate();
-        return (User)template.queryForObject(sql, new PreparedStatementSetter() {
+        return template.queryForObject(sql, new PreparedStatementSetter() {
             @Override
             public void setValues(PreparedStatement pstmt) throws SQLException {
                 pstmt.setString(1, userId);
             }
-        }, new RowMapper() {
+        }, new RowMapper<User>() {
             @Override
-            public Object mapRow(ResultSet rs) throws SQLException {
+            public User mapRow(ResultSet rs) throws SQLException {
                 return new User(rs.getString("userId"),
                         rs.getString("password"), rs.getString("name"),
                         rs.getString("email"));
