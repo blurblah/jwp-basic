@@ -49,7 +49,7 @@ public class JdbcTemplate {
             @Override
             public void setValues(PreparedStatement pstmt) throws SQLException {
                 for(int i = 0; i < values.length; i++) {
-                    pstmt.setObject(i, values[i]);
+                    pstmt.setObject(i+1, values[i]);
                 }
             }
         };
